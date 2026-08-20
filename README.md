@@ -1,100 +1,51 @@
-# vinext-starter
+# Shinagawa MyNumber Booking
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Bright Bloomによる、品川区マイナンバーカード交付予約の「時間から探す」サービスコンセプトです。
 
-## Prerequisites
+現行cesami/OpenReafを公開範囲で調査した結果を、実際に操作できる住民向けフロントと、段階移行できるアーキテクチャ契約へ落とし込んでいます。
 
-- Node.js `>=22.13.0`
+## 現在の範囲
 
-## Quick Start
+- 5会場横断の空き枠検索
+- 日付、時間帯、会場フィルター
+- 読上げ可能な予約枠とキーボード操作
+- デモ本人確認、確認、完了、予約内容表示
+- やさしい日本語切替
+- レスポンシブ表示
+- 合成データのみ。実システムへの送信、予約枠消費、個人情報保存は行わない
+
+## 開発
 
 ```bash
-npm install
+npm ci
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+品質確認:
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm run lint
+npm test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## 設計資料
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+- [アーキテクチャ](docs/architecture.md)
+- [API契約](docs/api/openapi.yaml)
+- [脅威モデル](docs/security-threat-model.md)
+- [アクセシビリティ](docs/accessibility.md)
+- [運用設計](docs/operations.md)
+- [データ・状態モデル](docs/data-and-state-model.md)
+- [業務ルールとシステムルール](docs/business-rules.md)
+- [全面リプレイス移行ランブック](docs/migration-runbook.md)
+- [本番移行判定ゲート](docs/production-readiness.md)
+- [ADR-0001: Strangler移行](docs/adr/0001-strangler-same-origin-adapter.md)
+- [ADR-0002: 予約枠整合性](docs/adr/0002-capacity-consistency.md)
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## 重要な境界
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+これはプロダクト水準のフロントエンド参照実装ですが、現時点ではcesamiの正式APIに接続していません。本番化には、ベンダー合意、合成IDを使う検証環境、正式なavailability/hold/reservation API、セキュリティ審査、個人情報影響評価が必要です。
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+## Ownership
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Designed and engineered by Bright Bloom.
