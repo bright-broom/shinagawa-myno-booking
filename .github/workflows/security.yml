@@ -21,6 +21,9 @@ jobs:
     name: secret-history-scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # Needed to resolve the exact commit range for pull-request scans
     steps:
       - name: Check out complete history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      actions: read
+      actions: read # Needed by zizmor online audits to inspect workflow metadata
       contents: read
     steps:
       - name: Check out source
@@ -64,10 +67,9 @@ jobs:
   dependencies:
     name: osv-lockfile-scan
     permissions:
-      actions: read
+      actions: read # Required by the upstream reusable workflow for artifact handling
       contents: read
-      # Required by the upstream reusable workflow even when SARIF upload is disabled.
-      security-events: write
+      security-events: write # Required by the upstream workflow even when SARIF upload is disabled
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
     with:
       scan-args: |-
