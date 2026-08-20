@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render(path = "/") {
+async function request(path = "/", method = "GET") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
     new Request(`https://booking.example.test${path}`, {
+      method,
       headers: { accept: "text/html", "x-forwarded-host": "booking.example.test" },
     }),
     {
@@ -17,6 +18,8 @@ async function render(path = "/") {
     { waitUntil() {}, passThroughOnException() {} },
   );
 }
+
+const render = (path = "/") => request(path);
 
 test("server-renders the complete Japanese booking experience", async () => {
   const response = await render();
@@ -37,9 +40,30 @@ test("adds baseline browser security headers", async () => {
   const response = await render();
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("cross-origin-resource-policy"), "same-origin");
   assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow, noarchive");
   assert.match(response.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/);
+  assert.match(response.headers.get("content-security-policy") ?? "", /script-src-attr 'none'/);
   assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=31536000/);
+});
+
+test("rejects write methods and oversized URLs before routing", async () => {
+  const postResponse = await request("/", "POST");
+  assert.equal(postResponse.status, 405);
+  assert.equal(postResponse.headers.get("allow"), "GET, HEAD");
+  assert.equal(postResponse.headers.get("x-content-type-options"), "nosniff");
+
+  const oversizedResponse = await request(`/?value=${"a".repeat(8_300)}`);
+  assert.equal(oversizedResponse.status, 414);
+});
+
+test("does not proxy external or recursive image sources", async () => {
+  const externalResponse = await request("/_vinext/image?url=https%3A%2F%2Fexample.test%2Fimage.png");
+  assert.equal(externalResponse.status, 400);
+
+  const recursiveResponse = await request("/_vinext/image?url=%2F_vinext%2Fimage%3Furl%3D%2Fimage.png");
+  assert.equal(recursiveResponse.status, 400);
 });
 
 test("keeps the prototype boundary, metadata and API contract explicit", async () => {

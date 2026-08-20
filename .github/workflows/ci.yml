@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  merge_group:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -12,17 +14,61 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  WRANGLER_SEND_METRICS: "false"
+
 jobs:
   verify:
+    name: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: 22
+          persist-credentials: false
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run audit
+
+      - name: Install from lockfile without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Run repository policy harness
+        run: npm run guardrails
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Type-check strict contracts
+        run: npm run typecheck
+
+      - name: Build and run regression tests
+        run: npm test
+
+      - name: Scan npm advisories
+        run: npm run audit
+
+      - name: Verify registry signatures and attestations
+        run: npm run signatures
+
+      - name: Generate CycloneDX SBOM
+        run: npm run sbom
+
+      - name: Hash deployable output
+        run: npm run release:evidence
+
+      - name: Retain main-branch release evidence
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-evidence-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 9

@@ -1,1 +1,6 @@
 * @bright-broom
+/.github/ @bright-broom
+/.openai/ @bright-broom
+/worker/ @bright-broom
+/docs/api/ @bright-broom
+/SECURITY.md @bright-broom

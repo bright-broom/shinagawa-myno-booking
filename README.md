@@ -24,9 +24,10 @@ npm run dev
 品質確認:
 
 ```bash
-npm run lint
-npm test
+npm run check
 ```
+
+この一つのコマンドで、リポジトリ方針、静的解析、厳格な型検査、ビルド後回帰テスト、依存脆弱性、npmレジストリ署名を検証します。CIはさらにsecret履歴スキャン、GitHub Actions設定監査、OSV依存スキャン、SBOM生成、配布物ハッシュ保存を行います。
 
 ## 設計資料
 
@@ -39,6 +40,7 @@ npm test
 - [業務ルールとシステムルール](docs/business-rules.md)
 - [全面リプレイス移行ランブック](docs/migration-runbook.md)
 - [本番移行判定ゲート](docs/production-readiness.md)
+- [リポジトリ・デプロイガードレール](docs/repository-guardrails.md)
 - [ADR-0001: Strangler移行](docs/adr/0001-strangler-same-origin-adapter.md)
 - [ADR-0002: 予約枠整合性](docs/adr/0002-capacity-consistency.md)
 

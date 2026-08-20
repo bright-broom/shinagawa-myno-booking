@@ -30,7 +30,9 @@
 | 職員権限濫用 | 個人ID、最小権限、MFA、監査、定期棚卸し |
 | 個人情報ログ漏えい | 構造化redaction、allowlist logging、短い保管期間 |
 | 通知誤送信 | outbox、宛先検証、テンプレート版管理、再送監査 |
-| サプライチェーン | lockfile、Dependabot、CI、SBOM、署名付き成果物 |
+| サプライチェーン | 正確な依存版、lockfile、lifecycle script無効化、Dependabot、npm署名検証、OSV、SBOM、配布物ハッシュ |
+| CIワークフロー改ざん | Actionのcommit SHA固定、最小権限、永続credential無効、zizmor、policy harness |
+| secret混入 | ローカル方針検査、履歴全体のGitleaks、公開Issueへの報告禁止 |
 
 ## Required validation before production
 
@@ -40,3 +42,5 @@
 - 個人情報影響評価
 - インシデント対応訓練
 - バックアップ復元試験
+
+現在のCSPはvinextのRSC実行要件により`script-src 'unsafe-inline'`を含みます。実データを扱う前に、nonceまたはhashベースへ移行し、インラインscriptを禁止することを必須ゲートとします。

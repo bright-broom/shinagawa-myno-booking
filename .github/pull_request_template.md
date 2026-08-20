@@ -1,15 +1,25 @@
-## Summary
+## Outcome
 
-- 
+- What user or operational outcome changes?
 
-## Validation
+## Scope and trust boundaries
 
-- [ ] `npm run lint`
-- [ ] `npm test`
-- [ ] Keyboard flow checked
-- [ ] No real personal or reservation data
+- Data classification:
+- Authentication/authorization impact:
+- External services or new egress:
+- Business-rule or API-contract impact:
 
-## Risk and rollback
+## Validation evidence
+
+- [ ] `npm run check`
+- [ ] No real personal data, reservation IDs, credentials or production endpoints
+- [ ] Security headers and demo boundary remain intact
+- [ ] Keyboard and screen-reader behavior reviewed when UI changed
+- [ ] API/ADR/operations documentation updated when contracts changed
+
+## Deployment
 
 - Risk:
-- Rollback:
+- Rollback trigger:
+- Rollback procedure:
+- Post-deploy verification:
