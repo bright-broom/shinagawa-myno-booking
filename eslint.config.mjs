@@ -4,6 +4,7 @@ import next from "@next/eslint-plugin-next";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
+import security from "eslint-plugin-security";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -21,7 +22,16 @@ const eslintConfig = defineConfig([
   react.configs.flat["jsx-runtime"],
   reactHooks.configs.flat["recommended-latest"],
   jsxA11y.flatConfigs.recommended,
+  security.configs.recommended,
   next.configs["core-web-vitals"],
+  {
+    files: ["scripts/**/*.mjs", "tests/**/*.mjs"],
+    rules: {
+      "security/detect-non-literal-fs-filename": "off",
+      "security/detect-object-injection": "off",
+      "security/detect-unsafe-regex": "off",
+    },
+  },
   {
     languageOptions: {
       globals: {

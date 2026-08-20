@@ -7,12 +7,12 @@ This repository is a demonstrator. Production is permitted only when every manda
 | Product/policy | signed journeys, rule catalogue, content ownership | Not started |
 | Architecture | approved target, integration contract, failure modes, cost model | Proposed |
 | Privacy/legal | DPIA/PIA, records schedule, processor agreements | Not started |
-| Security | threat-model review, SAST/SCA/secret scan, authorized assessment, incident exercise | Partial design only |
+| Security | threat-model review, SAST/SCA/secret scan, authorized assessment, incident exercise | Automated baseline implemented; independent assessment pending |
 | Accessibility | JIS/WCAG expert audit plus assistive-technology and resident testing | Partial automated/design only |
 | Reliability | measured SLOs, RTO/RPO, capacity test, backup restore, runbooks | Candidate targets only |
 | Data migration | two rehearsals, reconciliation sign-off, tested rollback | Not started |
 | Operations | support model, monitoring, escalation, status communications | Proposed |
-| Delivery | segregated environments, protected branch, approvals, signed release provenance | Partial |
+| Delivery | segregated environments, protected branch, approvals, signed release provenance | Policy-as-code and release evidence implemented; protected branch/attestation unavailable on current plan |
 | Procurement/vendor | supported interface, SLA, exit/export and deletion terms | Not started |
 
 ## Recommended candidate objectives

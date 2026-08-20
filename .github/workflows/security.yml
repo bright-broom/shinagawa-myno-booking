@@ -1,0 +1,78 @@
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 18 * * *"
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: secret-history-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # Needed to resolve the exact commit range for pull-request scans
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan committed history with Gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_VERSION: "8.30.1"
+
+  workflow-security:
+    name: github-actions-security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read # Needed by zizmor online audits to inspect workflow metadata
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Audit workflows with zizmor
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          advanced-security: false
+          annotations: true
+          inputs: .github/workflows
+          min-confidence: medium
+          min-severity: low
+          online-audits: true
+          persona: pedantic
+          version: v1.29.0
+
+  dependencies:
+    name: osv-lockfile-scan
+    permissions:
+      actions: read # Required by the upstream reusable workflow for artifact handling
+      contents: read
+      security-events: write # Required by the upstream workflow even when SARIF upload is disabled
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+    with:
+      scan-args: |-
+        --lockfile=package-lock.json
+      upload-sarif: false
+      fail-on-vuln: true
