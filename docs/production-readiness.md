@@ -12,7 +12,7 @@ This repository is a demonstrator. Production is permitted only when every manda
 | Reliability | measured SLOs, RTO/RPO, capacity test, backup restore, runbooks | Candidate targets only |
 | Data migration | two rehearsals, reconciliation sign-off, tested rollback | Not started |
 | Operations | support model, monitoring, escalation, status communications | Proposed |
-| Delivery | segregated environments, protected branch, approvals, signed release provenance | Policy-as-code and release evidence implemented; protected branch/attestation unavailable on current plan |
+| Delivery | segregated environments, protected branch, approvals, signed release provenance | Vercel Preview/Production、policy-as-code、release evidence、本番smokeを実装。protected branch/attestationは現行planでは未強制 |
 | Procurement/vendor | supported interface, SLA, exit/export and deletion terms | Not started |
 
 ## Recommended candidate objectives

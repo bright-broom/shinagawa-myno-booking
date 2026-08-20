@@ -21,8 +21,6 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "@openai/sites-vite-plugin"
-        update-types: ["version-update:semver-minor"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

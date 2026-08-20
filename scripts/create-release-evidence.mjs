@@ -4,17 +4,20 @@ import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "n
 import { join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const buildRoot = resolve(root, "dist");
+const buildRoot = resolve(root, ".next");
 const outputDirectory = resolve(root, "artifacts");
+
+const excluded = new Set(["cache", "diagnostics", "trace", "turbopack"]);
 
 function walk(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (directory === buildRoot && excluded.has(entry.name)) return [];
     const path = join(directory, entry.name);
     return entry.isDirectory() ? walk(path) : [path];
   });
 }
 
-if (!statSync(buildRoot).isDirectory()) throw new Error("dist/ is required before release evidence is created");
+if (!statSync(buildRoot).isDirectory()) throw new Error(".next/ is required before release evidence is created");
 
 const files = walk(buildRoot).sort().map((path) => ({
   path: relative(buildRoot, path),
@@ -27,11 +30,13 @@ const treeDigest = createHash("sha256")
 
 const sourceRevision = process.env.GITHUB_SHA
   ?? execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+const packageManager = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).packageManager;
 const manifest = {
   schema_version: 1,
+  platform: "vercel-nextjs",
   source_revision: sourceRevision,
   generated_at: new Date().toISOString(),
-  runtime: { node: process.version, npm: execFileSync("npm", ["--version"], { encoding: "utf8" }).trim() },
+  runtime: { node: process.version, package_manager: packageManager },
   build: { file_count: files.length, sha256: treeDigest, files },
 };
 

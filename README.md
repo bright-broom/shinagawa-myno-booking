@@ -1,6 +1,6 @@
 # Shinagawa MyNumber Booking
 
-Bright Bloomによる、品川区マイナンバーカード交付予約の「時間から探す」サービスコンセプトです。
+Bright Bloomによる、品川区マイナンバーカード交付予約の「時間から探す」サービスコンセプトです。公式Next.jsをVercelへ配備し、画面本体は静的生成、将来のAPI実行基盤は東京リージョンに分離しています。
 
 現行cesami/OpenReafを公開範囲で調査した結果を、実際に操作できる住民向けフロントと、段階移行できるアーキテクチャ契約へ落とし込んでいます。
 
@@ -28,6 +28,16 @@ npm run check
 ```
 
 この一つのコマンドで、リポジトリ方針、静的解析、厳格な型検査、ビルド後回帰テスト、依存脆弱性、npmレジストリ署名を検証します。CIはさらにsecret履歴スキャン、GitHub Actions設定監査、OSV依存スキャン、SBOM生成、配布物ハッシュ保存を行います。
+
+## Vercelへの配備
+
+- PRごとにVercel Previewを生成し、UI・ヘッダー・境界をレビューします。
+- `main`へのsquash mergeだけをProductionへ昇格します。
+- Node.js 24、`npm ci --ignore-scripts`、Next.js公式ビルドを固定しています。
+- 現在の画面は静的生成です。将来追加するFunctionsは`hnd1`（東京）で実行します。
+- `main`は6時間ごとの本番smoke testを持ち、異常はGitHub Actionsで検出します。
+
+ローカルの`.vercel/`と秘密情報はコミットしません。環境変数を追加する場合はVercelのPreview/Productionを分離し、公開値以外に`NEXT_PUBLIC_`を付けないでください。
 
 ## 設計資料
 
