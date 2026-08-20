@@ -64,7 +64,9 @@
 
 ## 6. Deployment topology
 
-推奨は同一オリジン配下の段階移行。
+現在のデモは公式Next.js App RouterをVercelへ配備する。住民画面は静的生成し、将来のAdapter/APIはVercel Functionsの東京リージョンへ追加する。PR PreviewとProductionを分離し、`main`だけを本番昇格元にする。
+
+本番統合時も推奨は同一オリジン配下の段階移行。
 
 ```text
 https://booking.example.jp/       -> 新フロント

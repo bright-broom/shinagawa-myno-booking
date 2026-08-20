@@ -1,6 +1,6 @@
 * @bright-broom
 /.github/ @bright-broom
-/.openai/ @bright-broom
-/worker/ @bright-broom
+/vercel.json @bright-broom
+/next.config.ts @bright-broom
 /docs/api/ @bright-broom
 /SECURITY.md @bright-broom

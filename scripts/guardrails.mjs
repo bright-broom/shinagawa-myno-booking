@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -21,11 +21,10 @@ function listWorkflowFiles() {
 }
 
 function listRepositoryFiles() {
-  const output = execFileSync(
-    "git",
-    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-    { cwd: root, encoding: "utf8" },
-  );
+  const output = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    cwd: root,
+    encoding: "utf8",
+  });
   return output.split("\0").filter(Boolean);
 }
 
@@ -35,10 +34,8 @@ assert.ok(workflowFiles.length > 0, "At least one workflow is required");
 for (const workflowPath of workflowFiles) {
   const source = read(workflowPath);
   const actionReferences = [...source.matchAll(/^\s*(?:-\s*)?uses:\s*["']?([^@\s"']+)@([^\s"'#]+)/gm)];
-
   for (const [, action, revision] of actionReferences) {
-    if (action.startsWith("./")) continue;
-    if (!/^[0-9a-f]{40}$/.test(revision)) {
+    if (!action.startsWith("./") && !/^[0-9a-f]{40}$/.test(revision)) {
       fail(`${workflowPath}: ${action} must use a full 40-character commit SHA`);
     }
   }
@@ -66,7 +63,7 @@ const secretPatterns = [
 
 for (const file of listRepositoryFiles()) {
   const absolute = join(root, file);
-  if (!statSync(absolute).isFile() || statSync(absolute).size > 2_000_000) continue;
+  if (!existsSync(absolute) || !statSync(absolute).isFile() || statSync(absolute).size > 2_000_000) continue;
   const buffer = readFileSync(absolute);
   if (buffer.includes(0)) continue;
   const source = buffer.toString("utf8");
@@ -76,37 +73,48 @@ for (const file of listRepositoryFiles()) {
   }
 }
 
-const hosting = JSON.parse(read(".openai/hosting.json"));
-const hostingKeys = Object.keys(hosting).sort();
-if (hostingKeys.some((key) => !["d1", "project_id", "r2"].includes(key))) {
-  fail(".openai/hosting.json may contain only project_id, d1 and r2");
+for (const obsolete of [".openai/hosting.json", "vite.config.ts", "worker"]) {
+  if (existsSync(join(root, obsolete))) fail(`${obsolete} is obsolete after the Vercel migration`);
 }
-if (typeof hosting.project_id !== "string" || !hosting.project_id.startsWith("appgprj_")) {
-  fail(".openai/hosting.json must contain the existing opaque project_id");
-}
+
+const vercel = JSON.parse(read("vercel.json"));
+const allowedVercelKeys = ["$schema", "buildCommand", "fluid", "framework", "installCommand", "regions"];
+if (Object.keys(vercel).some((key) => !allowedVercelKeys.includes(key))) fail("vercel.json contains an unreviewed setting");
+if (vercel.$schema !== "https://openapi.vercel.sh/vercel.json") fail("vercel.json must use the official schema");
+if (vercel.framework !== "nextjs") fail("Vercel framework must be nextjs");
+if (vercel.buildCommand !== "npm run build") fail("Vercel must use the reviewed build command");
+if (vercel.installCommand !== "npm ci --ignore-scripts") fail("Vercel install must be deterministic and disable lifecycle scripts");
+if (vercel.fluid !== true) fail("Vercel Fluid compute must remain enabled for future functions");
+if (JSON.stringify(vercel.regions) !== JSON.stringify(["hnd1"])) fail("Vercel functions must remain in Tokyo (hnd1)");
 
 const npmConfig = read(".npmrc");
 for (const setting of ["ignore-scripts=true", "engine-strict=true", "save-exact=true"]) {
   if (!npmConfig.includes(setting)) fail(`.npmrc must include ${setting}`);
 }
-
-if (read(".node-version").trim() !== "22.23.2") fail("Node must be pinned to 22.23.2");
+if (read(".node-version").trim() !== "24.19.0") fail("Node must be pinned to 24.19.0");
 
 const packageJson = JSON.parse(read("package.json"));
-if (packageJson.packageManager !== "npm@10.9.8") fail("npm must be pinned to 10.9.8");
+if (packageJson.packageManager !== "npm@11.17.0") fail("npm must be pinned to 11.17.0");
+if (packageJson.engines?.node !== "24.x") fail("Vercel Node engine must be 24.x");
+if (packageJson.dependencies?.next !== "16.3.1") fail("Next.js must remain on the reviewed 16.3.1 release");
 for (const [name, version] of Object.entries({ ...packageJson.dependencies, ...packageJson.devDependencies })) {
   if (!/^(?:\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?|(?:git\+)?https:\/\/[^#]+#[0-9a-f]{40})$/.test(version)) {
     fail(`package ${name} must use an exact version or immutable commit`);
   }
 }
-for (const script of ["guardrails", "typecheck", "audit", "signatures", "sbom", "release:evidence", "check"]) {
+for (const script of ["guardrails", "typecheck", "audit", "signatures", "sbom", "release:evidence", "smoke", "check"]) {
   if (!packageJson.scripts?.[script]) fail(`package.json is missing the ${script} script`);
 }
 for (const lifecycle of ["preinstall", "install", "postinstall", "prepare"]) {
   if (packageJson.scripts?.[lifecycle]) fail(`package lifecycle script ${lifecycle} requires explicit review`);
 }
+for (const obsolete of ["@cloudflare/vite-plugin", "@openai/sites-vite-plugin", "@vitejs/plugin-react", "@vitejs/plugin-rsc", "react-server-dom-webpack", "vinext", "vite", "wrangler"]) {
+  if (packageJson.dependencies?.[obsolete] || packageJson.devDependencies?.[obsolete]) {
+    fail(`obsolete infrastructure package ${obsolete} must be removed`);
+  }
+}
 
-const worker = read("worker/index.ts");
+const nextConfig = read("next.config.ts");
 for (const required of [
   "Content-Security-Policy",
   "Cross-Origin-Resource-Policy",
@@ -115,23 +123,23 @@ for (const required of [
   "Strict-Transport-Security",
   "X-Content-Type-Options",
   "X-Robots-Tag",
+  "poweredByHeader: false",
+  "remotePatterns: []",
 ]) {
-  if (!worker.includes(required)) fail(`worker/index.ts is missing ${required}`);
-}
-if (!worker.includes('allowedMethods = new Set(["GET", "HEAD"])')) {
-  fail("worker/index.ts must deny non-read HTTP methods");
+  if (!nextConfig.includes(required)) fail(`next.config.ts is missing ${required}`);
 }
 
-const runtimeSurface = ["app", "worker", "vite.config.ts", "next.config.ts"]
-  .flatMap((entry) => {
-    const absolute = join(root, entry);
-    if (!statSync(absolute).isDirectory()) return [entry];
-    const walk = (directory) => readdirSync(directory, { withFileTypes: true }).flatMap((item) => {
-      const child = join(directory, item.name);
-      return item.isDirectory() ? walk(child) : [relative(root, child)];
-    });
-    return walk(absolute);
+function walk(directory) {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((item) => {
+    const child = join(directory, item.name);
+    return item.isDirectory() ? walk(child) : [relative(root, child)];
   });
+}
+
+const runtimeSurface = ["app", "next.config.ts", "vercel.json"].flatMap((entry) => {
+  const absolute = join(root, entry);
+  return statSync(absolute).isDirectory() ? walk(absolute) : [entry];
+});
 for (const file of runtimeSurface) {
   if (/shinagawa-myno\.openreaf\.jp|ziwave|cesami/i.test(read(file))) {
     fail(`${file}: runtime code must not connect to or impersonate the incumbent system`);

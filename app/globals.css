@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --ink: #17201d;
   --muted: #5f6d68;
   --line: #dfe8e3;
@@ -21,7 +23,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-geist-sans), "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  font-family: var(--font-sans);
 }
 button, input, select { font: inherit; }
 button { cursor: pointer; }

@@ -9,7 +9,7 @@
 | Layer | Control |
 |---|---|
 | Source | CODEOWNERS、PR checklist、短命ブランチ、squash merge |
-| Runtime | GET/HEADのみ、URL長制限、同一オリジン画像、CSP/HSTS/COOP/CORP、noindex |
+| Runtime | 静的生成、外部画像拒否、CSP/HSTS/COOP/CORP、noindex、framework header抑止 |
 | Dependencies | Node/npm固定、正確な依存版、lockfile、install script無効、npm audit/署名検証 |
 | CI | token最小権限、credential非永続化、全Actionをcommit SHA固定、zizmor監査 |
 | Detection | Gitleaks履歴スキャン、OSV lockfileスキャン、日次Security workflow |
@@ -23,9 +23,16 @@
 1. `main`からブランチを作り、PRの信頼境界・検証・ロールバックを記載する。
 2. CIとSecurityの全jobを成功させ、差分と生成証跡をレビューする。
 3. squash mergeし、マージcommitを唯一の配布元とする。
-4. 同じcommitをビルドしてサイトversionへ登録し、owner-onlyで公開する。
-5. 公開URL、source commit、site version、CI runを記録する。
-6. 異常時は直前の正常versionを再公開する。個人情報や予約書込を始めた後は、別途データ整合性ランブックに従う。
+4. Vercel Git IntegrationがPR Previewを作成し、承認済み`main`だけをProductionへ配備する。
+5. 公開URL、source commit、deployment ID、CI runを記録し、本番smoke testを継続する。
+6. 異常時は直前の正常deploymentをpromoteする。個人情報や予約書込を始めた後は、別途データ整合性ランブックに従う。
+
+## Vercel configuration boundary
+
+- `vercel.json`は公式schema、Next.js、決定的install、東京region、Fluid computeだけを許可する。
+- セキュリティヘッダーは`next.config.ts`で一元管理し、回帰テストと本番smokeで確認する。
+- PreviewとProductionの環境変数を分離し、秘密値を`NEXT_PUBLIC_`として公開しない。
+- Production domainは住民向け公開面として扱う。Preview保護や全deployment保護の契約要件は本番移行審査で決定する。
 
 ## Repository settings
 

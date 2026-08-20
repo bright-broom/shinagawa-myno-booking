@@ -33,7 +33,8 @@ Final targets require traffic and business impact data.
 
 - PRで`npm run check`、Gitleaks、zizmor、OSVをすべて成功させる
 - `main`でSBOMと配布物ハッシュを生成し、対象commitと結び付けて保管する
-- デプロイ先へ渡すのはマージ済み`main`の同一commitだけとし、公開後にURLとcommitを記録する
+- Vercel Previewで差分を確認し、Productionへ渡すのはマージ済み`main`の同一commitだけとする
+- 公開後にURL、commit、Vercel deployment ID、CI runを記録し、6時間ごとのsmoke testを継続する
 - Feature flags by function and venue
 - Canary for read flows; controlled cohort for writes
 - Schema changes expand/contract
@@ -41,4 +42,4 @@ Final targets require traffic and business impact data.
 - Rollback criteria and named incident commander
 - No simultaneous write authority in old and new systems
 
-デモのロールバックは、直前に成功したサイトversionを再公開する。将来の書込系は、アプリだけを戻してもデータを元に戻さないため、expand/contract方式、前方互換、機能フラグ停止、照合手順を先に用意する。
+デモのロールバックは、Vercelで直前に成功したProduction deploymentをpromoteする。将来の書込系は、アプリだけを戻してもデータを元に戻さないため、expand/contract方式、前方互換、機能フラグ停止、照合手順を先に用意する。

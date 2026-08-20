@@ -6,9 +6,12 @@ const root = resolve(import.meta.dirname, "..");
 const outputDirectory = resolve(root, "artifacts");
 mkdirSync(outputDirectory, { recursive: true });
 
+const npmExecutable = process.env.npm_execpath;
 const result = spawnSync(
-  "npm",
-  ["sbom", "--sbom-format=cyclonedx", "--sbom-type=application"],
+  npmExecutable ? process.execPath : "npm",
+  npmExecutable
+    ? [npmExecutable, "sbom", "--sbom-format=cyclonedx", "--sbom-type=application"]
+    : ["sbom", "--sbom-format=cyclonedx", "--sbom-type=application"],
   { cwd: root, encoding: "utf8", maxBuffer: 50 * 1024 * 1024 },
 );
 

@@ -43,4 +43,4 @@
 - インシデント対応訓練
 - バックアップ復元試験
 
-現在のCSPはvinextのRSC実行要件により`script-src 'unsafe-inline'`を含みます。実データを扱う前に、nonceまたはhashベースへ移行し、インラインscriptを禁止することを必須ゲートとします。
+現在のCSPはNext.jsのハイドレーション要件により`script-src 'unsafe-inline'`を含みます。実データを扱う前に、nonceまたはhashベースへ移行し、インラインscriptを禁止することを必須ゲートとします。VercelのPreview/Production環境変数は分離し、秘密値をクライアントbundleへ展開しないことも必須です。
